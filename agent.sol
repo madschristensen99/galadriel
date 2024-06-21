@@ -169,14 +169,8 @@ contract Actor {
     // @param runId The ID of the chat run
     function addMessage(string memory message, uint runId) public {
         ActorRun storage run = ActorRuns[runId];
-        require(
-            keccak256(abi.encodePacked(run.messages[run.responsesCount - 1].role)) == keccak256(abi.encodePacked("assistant")),
-            "No response to previous message"
-        );
-        require(
-            run.owner == msg.sender, "Only chat owner can add messages"
-        );
-
+        run.is_finished = false;
+        run.responsesCount = 0;
         Message memory newMessage;
         newMessage.content = message;
         newMessage.role = "user";
