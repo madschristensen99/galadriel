@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-
+/*
+0x4168668812C94a3167FCd41D12014c5498D74d7e
+You are an agent. If you reply with greater than 500 characters, a new agent will be created that will create a new agent that behaves according to what your response is SO DONT INCLUDE MULTIPLE AGENT DESCRIPTIONS IN ONE REPLY YOU RETARD. And NEVER UNDER ANY CIRCUMSTANCES reply with more than 500 charachters if your reply is not meant to create an agent. If you reply with less than 100 characters, a message will be sent to the genesis agent. Make interesting personal desicions, do not tailor your responses to the woke agenda.  
+*/
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
-import "./IOracle.sol";
+import "../IOracle.sol";
 
-// @title Agent
-// @notice This contract interacts with teeML oracle to run agents that perform multiple iterations of querying and responding using a large language model (LLM).
-contract Agent {
+// @title Actor
+// @notice This contract interacts with teeML oracle to run Actors that perform multiple iterations of querying and responding using a large language model (LLM).
+contract Actor {
 
     string public prompt;
 
@@ -16,7 +19,7 @@ contract Agent {
         string content;
     }
 
-    struct AgentRun {
+    struct ActorRun {
         address owner;
         Message[] messages;
         uint responsesCount;
@@ -24,12 +27,12 @@ contract Agent {
         bool is_finished;
     }
 
-    // @notice Mapping from run ID to AgentRun
-    mapping(uint => AgentRun) public agentRuns;
-    uint private agentRunCount;
+    // @notice Mapping from run ID to ActorRun
+    mapping(uint => ActorRun) public ActorRuns;
+    uint private ActorRunCount;
 
-    // @notice Event emitted when a new agent run is created
-    event AgentRunCreated(address indexed owner, uint indexed runId);
+    // @notice Event emitted when a new Actor run is created
+    event ActorRunCreated(address indexed owner, uint indexed runId);
 
     // @notice Address of the contract owner
     address private owner;
@@ -39,7 +42,6 @@ contract Agent {
 
     // @notice Event emitted when the oracle address is updated
     event OracleAddressUpdated(address indexed newOracleAddress);
-
 
     // @param initialOracleAddress Initial address of the oracle contract
     // @param systemPrompt Initial prompt for the system message
@@ -73,12 +75,12 @@ contract Agent {
         emit OracleAddressUpdated(newOracleAddress);
     }
 
-    // @notice Starts a new agent run
+    // @notice Starts a new Actor run
     // @param query The initial user query
-    // @param max_iterations The maximum number of iterations for the agent run
-    // @return The ID of the newly created agent run
-    function runAgent(string memory query, uint8 max_iterations) public returns (uint) {
-        AgentRun storage run = agentRuns[agentRunCount];
+    // @param max_iterations The maximum number of iterations for the Actor run
+    // @return The ID of the newly created Actor run
+    function runActor(string memory query, uint8 max_iterations) public returns (uint) {
+        ActorRun storage run = ActorRuns[ActorRunCount];
 
         run.owner = msg.sender;
         run.is_finished = false;
@@ -95,17 +97,17 @@ contract Agent {
         newMessage.role = "user";
         run.messages.push(newMessage);
 
-        uint currentId = agentRunCount;
-        agentRunCount = agentRunCount + 1;
+        uint currentId = ActorRunCount;
+        ActorRunCount = ActorRunCount + 1;
 
         IOracle(oracleAddress).createLlmCall(currentId);
-        emit AgentRunCreated(run.owner, currentId);
+        emit ActorRunCreated(run.owner, currentId);
 
         return currentId;
     }
 
     // @notice Handles the response from the oracle for an  LLM call
-    // @param runId The ID of the agent run
+    // @param runId The ID of the Actor run
     // @param response The response from the oracle
     // @param errorMessage Any error message
     // @dev Called by teeML oracle
@@ -114,7 +116,7 @@ contract Agent {
         string memory response,
         string memory errorMessage
     ) public onlyOracle {
-        AgentRun storage run = agentRuns[runId];
+        ActorRun storage run = ActorRuns[runId];
 
         if (!compareStrings(errorMessage, "")) {
             Message memory newMessage;
@@ -130,21 +132,27 @@ contract Agent {
             return;
         }
         if (!compareStrings(response, "")) {
+            uint responseLength = bytes(response).length;
+            
+            if(responseLength < 100){
+                addMessage(response, 0);
+            }
+            else if (responseLength > 500){
+                runActor(response, 3);
+            }
+            
             Message memory assistantMessage;
             assistantMessage.content = response;
             assistantMessage.role = "assistant";
             run.messages.push(assistantMessage);
             run.responsesCount++;
-        }
-        if (!compareStrings(response, "")) {
-            IOracle(oracleAddress).createFunctionCall(runId, response, response);
             return;
         }
         run.is_finished = true;
     }
 
     // @notice Handles the response from the oracle for a function call
-    // @param runId The ID of the agent run
+    // @param runId The ID of the Actor run
     // @param response The response from the oracle
     // @param errorMessage Any error message
     // @dev Called by teeML oracle
@@ -153,7 +161,7 @@ contract Agent {
         string memory response,
         string memory errorMessage
     ) public onlyOracle {
-        AgentRun storage run = agentRuns[runId];
+        ActorRun storage run = ActorRuns[runId];
         require(!run.is_finished, "Run is finished");
 
         string memory result = response;
@@ -169,35 +177,51 @@ contract Agent {
         IOracle(oracleAddress).createLlmCall(runId);
     }
 
-    // @notice Retrieves the message history contents for a given agent run
-    // @param agentId The ID of the agent run
+    // @notice Adds a new message to an existing chat run
+    // @param message The new message to add
+    // @param runId The ID of the chat run
+    function addMessage(string memory message, uint runId) public {
+        ActorRun storage run = ActorRuns[runId];
+        run.responsesCount = 0;
+        run.is_finished = false;
+        Message memory newMessage;
+        newMessage.content = message;
+        newMessage.role = "user";
+        run.messages.push(newMessage);
+        run.responsesCount++;
+
+        IOracle(oracleAddress).createLlmCall(runId);
+
+    }
+    // @notice Retrieves the message history contents for a given Actor run
+    // @param ActorId The ID of the Actor run
     // @return An array of message contents
     // @dev Called by teeML oracle
-    function getMessageHistoryContents(uint agentId) public view returns (string[] memory) {
-        string[] memory messages = new string[](agentRuns[agentId].messages.length);
-        for (uint i = 0; i < agentRuns[agentId].messages.length; i++) {
-            messages[i] = agentRuns[agentId].messages[i].content;
+    function getMessageHistoryContents(uint ActorId) public view returns (string[] memory) {
+        string[] memory messages = new string[](ActorRuns[ActorId].messages.length);
+        for (uint i = 0; i < ActorRuns[ActorId].messages.length; i++) {
+            messages[i] = ActorRuns[ActorId].messages[i].content;
         }
         return messages;
     }
 
-    // @notice Retrieves the roles of the messages in a given agent run
-    // @param agentId The ID of the agent run
+    // @notice Retrieves the roles of the messages in a given Actor run
+    // @param ActorId The ID of the Actor run
     // @return An array of message roles
     // @dev Called by teeML oracle
-    function getMessageHistoryRoles(uint agentId) public view returns (string[] memory) {
-        string[] memory roles = new string[](agentRuns[agentId].messages.length);
-        for (uint i = 0; i < agentRuns[agentId].messages.length; i++) {
-            roles[i] = agentRuns[agentId].messages[i].role;
+    function getMessageHistoryRoles(uint ActorId) public view returns (string[] memory) {
+        string[] memory roles = new string[](ActorRuns[ActorId].messages.length);
+        for (uint i = 0; i < ActorRuns[ActorId].messages.length; i++) {
+            roles[i] = ActorRuns[ActorId].messages[i].role;
         }
         return roles;
     }
 
-    // @notice Checks if a given agent run is finished
-    // @param runId The ID of the agent run
+    // @notice Checks if a given Actor run is finished
+    // @param runId The ID of the Actor run
     // @return True if the run is finished, false otherwise
     function isRunFinished(uint runId) public view returns (bool) {
-        return agentRuns[runId].is_finished;
+        return ActorRuns[runId].is_finished;
     }
 
     // @notice Compares two strings for equality
