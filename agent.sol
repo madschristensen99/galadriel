@@ -134,6 +134,7 @@ contract Actor {
             assistantMessage.role = "assistant";
             run.messages.push(assistantMessage);
             run.responsesCount++;
+            return;
         }
         run.is_finished = true;
     }
@@ -169,8 +170,8 @@ contract Actor {
     // @param runId The ID of the chat run
     function addMessage(string memory message, uint runId) public {
         ActorRun storage run = ActorRuns[runId];
-        run.is_finished = false;
         run.responsesCount = 0;
+        run.is_finished = false;
         Message memory newMessage;
         newMessage.content = message;
         newMessage.role = "user";
