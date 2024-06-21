@@ -135,10 +135,6 @@ contract Actor {
             run.messages.push(assistantMessage);
             run.responsesCount++;
         }
-        if (!compareStrings(response, "")) {
-            IOracle(oracleAddress).createFunctionCall(runId, response, response);
-            return;
-        }
         run.is_finished = true;
     }
 
