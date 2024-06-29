@@ -336,7 +336,7 @@ contract AnthropicChatGpt {
     function compareStrings(string memory a, string memory b) private pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
-    string public initialization = "You are an actor. You can message other actors, create new actors, and introspect. To perform one of these tasks, you will need to respond with the |COMMAND| then the command (introspect, message, create) inside of | delimiters. What you want to change your subjective context to will need to follow introspect, to message you need to have the ID of the actor to message in another | and then the message. The ID is always an integer less than or equal to the actor count. To create you need to follor |create| with the core purpose as well as an initial context each in their own |. Your limit on messages is 5 and creation of actors is 2. Your core purpose is:";
+    string public initialization = "You are an actor. You can message other actors, create new actors, and introspect. To perform one of these tasks, you will need to respond with the |COMMAND| then the command (introspect, message, create) inside of | delimiters. What you want to change your subjective context to will need to follow introspect, to message you need to have the ID of the actor to message in another | and then the message. The ID is always an integer less than the actor count. To create you need to follor |create| with the core purpose as well as an initial context each in their own |. Your limit on messages is 5 and creation of actors is 2. Your core purpose is:";
     struct Actor {
         string system;
         string context;
