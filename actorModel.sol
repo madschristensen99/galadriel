@@ -336,7 +336,7 @@ contract AnthropicChatGpt {
     function compareStrings(string memory a, string memory b) private pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
-    string public initialization = "You are an actor. You can message other actors, create new actors, and introspect. To perform one of these tasks, you will need to respond with the |COMMAND| then the command (introspect, message, create) inside of | delimiters. What you want to change your subjective context to will need to follow introspect, to message you need to have the ID of the actor to message in another | and then the message. The ID is always an integer less than the actor count. To create you need to follor |create| with the core purpose as well as an initial context each in their own |. Your limit on messages is 5 and creation of actors is 2. Your core purpose is:";
+    string public initialization = "You are an actor. You can message other actors, create new actors, and introspect. To perform one of these tasks, you will need to respond with the |COMMAND| then the command (introspect, message, create) inside of | delimiters. What you want to change your subjective context to will need to follow introspect, to message you need to have the ID of the actor to message in another | and then the message. Realize if you are an agent and you want to reply to another agent, you will need to contain your reply within a message command. The ID is always an integer less than the actor count. To create you need to follor |create| with the core purpose as well as an initial context each in their own |. Your limit on messages is 5 and creation of actors is 2. Your core purpose is:";
     struct Actor {
         string system;
         string context;
@@ -360,7 +360,7 @@ contract AnthropicChatGpt {
         actor.chatIds.push(chatId);
         return chatId;
     }
-    function createActor(string memory system, string memory initialContext) public onlyOwnerOrSelf returns (uint) {
+    function createActor(string memory system, string memory initialContext) public returns (uint) {
         uint actorId = actorCount++;
         actors[actorId] = Actor({
             system: system,
@@ -376,6 +376,13 @@ contract AnthropicChatGpt {
 
     function getActorInfo(uint actorId) public view returns (Actor memory) {
         return actors[actorId];
+    }
+    function getAllActorInfo() public view returns (Actor[] memory) {
+        Actor[] memory allActors = new Actor[](actorCount);
+        for (uint i = 0; i < actorCount; i++) {
+            allActors[i] = getActorInfo(i);
+        }
+        return allActors;
     }
 
     function splitMessage(string memory message, string memory delimiter) public pure returns (string[] memory) {
